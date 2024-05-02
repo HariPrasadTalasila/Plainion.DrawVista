@@ -5,7 +5,7 @@ using Plainion.DrawVista.UseCases;
 
 namespace Plainion.DrawVista.Adapters;
 
-public partial class SvgCaptionParser : ISvgCaptionParser
+public partial class SvgDrawIOCaptionParser : ISvgCaptionParser
 {
     public IReadOnlyCollection<Caption> Parse(XElement document) =>
         document

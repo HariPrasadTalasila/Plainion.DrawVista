@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Plainion.DrawVista.IO;
 
 namespace Plainion.DrawVista.UseCases;
 
@@ -30,10 +32,18 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
 
         Console.WriteLine("!!! Creating dot language file !!!");
         var pageToReferencesMap = GetPageToReferencesMap(knownPageNames, parsedDocuments);
-        var dotModel = new DotFileWriter(pageToReferencesMap);
-        dotModel.WriteTo(Path.GetTempFileName() + ".dot");
+        var dotFileModel = new DotFileModel(pageToReferencesMap);
+        
+        Console.WriteLine("!!! Creating auto generated index graph in svg file !!!");
+        var dotApp = new DotApp(dotFileModel);
+        var svgFileName = dotApp.ExtractSvg();
 
-        foreach (var doc in parsedDocuments)
+        var autoGenIndexSvgRawDoc = new RawDocument(Path.GetFileNameWithoutExtension(svgFileName), File.ReadAllText(svgFileName));
+        var autoGenIndexParsedDoc = ParsedDocument.Create(new SvgDotGraphCaptionParser(), autoGenIndexSvgRawDoc);
+
+        var allParsedDocs = parsedDocuments.Concat([autoGenIndexParsedDoc]);
+
+        foreach (var doc in allParsedDocs)
         {
             AddLinks(knownPageNames, doc);
             ApplyStyleToExistingLinks(doc);
@@ -47,18 +57,19 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
 
         IEnumerable<string> GetCaptionNames(ParsedDocument parsedDoc) => parsedDoc.Captions.Select(x => x.DisplayText);
 
+        bool IsReferencing(ParsedDocument parsedDoc, string pageName) => GetCaptionNames(parsedDoc).Any(x => x.Equals(pageName, StringComparison.OrdinalIgnoreCase));
+
         foreach (var currentPage in parsedDocuments)
         {
             var currentPageName = currentPage.Name;
             var otherPageNames = knownPageNames.Except([currentPageName]);
-            var pageReferencesByCurrentPage = otherPageNames.Where(x => GetCaptionNames(currentPage).Any(cn => cn.Equals(x, StringComparison.OrdinalIgnoreCase) ));
+            var referencesFromCurrentPage = otherPageNames.Where(opn => IsReferencing(currentPage, opn));
             
-            pageToReferencesMap[currentPageName] = pageReferencesByCurrentPage.ToList();
+            pageToReferencesMap[currentPageName] = referencesFromCurrentPage.ToList();
         }
 
         return pageToReferencesMap;
     }
-
 
     private record ParsedDocument(string Name, XElement Content, IReadOnlyCollection<Caption> Captions)
     {
@@ -129,4 +140,21 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
             myFormatter.ApplyStyle(link, isExternal: true);
         }
     }
+}
+
+public partial class SvgDotGraphCaptionParser : ISvgCaptionParser
+{
+    public IReadOnlyCollection<Caption> Parse(XElement document) =>
+        document
+            .Descendants()
+            .Where(x => x.EqualsTagName("text"))
+            .Select(x => new Caption(x, GetDisplayText(x.Value)))
+            .ToList();
+
+    private static string GetDisplayText(string value) =>
+        WhitespacePattern().Replace(value, "")
+            .Replace("<br/>", "");
+    
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespacePattern();
 }

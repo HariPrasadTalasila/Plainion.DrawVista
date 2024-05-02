@@ -2,13 +2,15 @@ using System.Text;
 
 namespace Plainion.DrawVista.UseCases;
 
-internal class DotFileWriter(IDictionary<string, IList<string>> PageToReferencesMap)
+public class DotFileModel(IDictionary<string, IList<string>> pageToReferencesMap)
 {
+    private readonly IDictionary<string, IList<string>> myPageToReferencesMap = pageToReferencesMap;
+    
     public void WriteTo(string file)
     {
         StringBuilder graphContent = new();
 
-        foreach (var (pageName, pageReferences) in PageToReferencesMap)
+        foreach (var (pageName, pageReferences) in myPageToReferencesMap)
         {
             foreach(var referencedPage in pageReferences)
             {
