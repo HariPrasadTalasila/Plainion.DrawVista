@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 
 namespace Plainion.DrawVista.UseCases;
@@ -128,26 +127,5 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
         {
             myFormatter.ApplyStyle(link, isExternal: true);
         }
-    }
-}
-
-internal class DotFileWriter(IDictionary<string, IList<string>> NodeLinks)
-{
-    public void WriteTo(string file)
-    {
-        StringBuilder graphContent = new();
-
-        foreach (var links in NodeLinks)
-        {
-            foreach(var refNode in links.Value)
-            {
-                graphContent.AppendLine($"{links.Key} -> {refNode}");
-            }
-        }
-
-        var fileContent = $"digraph {{ { Environment.NewLine } node [shape = box] { Environment.NewLine } {graphContent} }}";
-
-        File.WriteAllText(file, fileContent);
-        Console.WriteLine($"dot file created at location: {file}");
     }
 }
