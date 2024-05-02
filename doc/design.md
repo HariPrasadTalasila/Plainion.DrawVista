@@ -1,5 +1,5 @@
 # Dependencies
-![](</design/Dependencies Overview.drawio.png>)
+![](</doc/design/Dependencies Overview.drawio.png>)
 
 # Design
-![](</design/Design Overview - Class Level.drawio.png>)
+![](</doc/design/Design Overview - Class Level.drawio.png>)
