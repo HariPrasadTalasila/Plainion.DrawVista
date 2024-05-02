@@ -2,6 +2,7 @@ using System.Xml.Linq;
 using Plainion.DrawVista.Adapters;
 using Plainion.DrawVista.UseCases;
 using Moq;
+using Plainion.DrawVista.IO;
 
 namespace Plainion.DrawVista.Tests;
 
@@ -87,7 +88,7 @@ public class SvgProcessorTests
         var systemPage = new RawDocument("System", SvgDocument);
         var parserPage = new RawDocument("Parser", new XElement("doc", new XAttribute("width", "100%")).ToString());
 
-        var svgProcessor = new SvgProcessor(new SvgDrawIOCaptionParser(), new SvgHyperlinkFormatter(), store);
+        var svgProcessor = new SvgProcessor(new SvgDrawIOCaptionParser(), new SvgHyperlinkFormatter(), new Mock<ISvgIndexCreator>().Object, store);
         svgProcessor.Process([systemPage, parserPage]);
 
         var parserElement = XElement.Parse(store.GetPage("System").Content).Descendants()
@@ -101,7 +102,7 @@ public class SvgProcessorTests
         var store = new FakeDocumentStore();
         var systemPage = new RawDocument("System", SvgDocument);
 
-        var svgProcessor = new SvgProcessor(new SvgDrawIOCaptionParser(), new SvgHyperlinkFormatter(), store);
+        var svgProcessor = new SvgProcessor(new SvgDrawIOCaptionParser(), new SvgHyperlinkFormatter(), new Mock<ISvgIndexCreator>().Object, store);
         svgProcessor.Process([systemPage]);
 
         var linkElement = XElement.Parse(store.GetPage("System").Content).Descendants()

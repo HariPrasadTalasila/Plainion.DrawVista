@@ -6,7 +6,7 @@ using Plainion.DrawVista.IO;
 
 namespace Plainion.DrawVista.UseCases;
 
-public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter formatter, IDocumentStore store)
+public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter formatter, ISvgIndexCreator autoIndexer, IDocumentStore store)
 {
     private readonly ISvgCaptionParser myParser = parser;
     private readonly ISvgHyperlinkFormatter myFormatter = formatter;
@@ -30,15 +30,8 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
             .Select(x => ParsedDocument.Create(myParser, x))
             .Concat(existingDocuments);
 
-        Console.WriteLine("!!! Creating dot language file !!!");
         var pageToReferencesMap = GetPageToReferencesMap(knownPageNames, parsedDocuments);
-        var dotFileModel = new DotFileModel(pageToReferencesMap);
-        
-        Console.WriteLine("!!! Creating auto generated index graph in svg file !!!");
-        var dotApp = new DotApp(dotFileModel);
-        var svgFileName = dotApp.ExtractSvg();
-
-        var autoGenIndexSvgRawDoc = new RawDocument(Path.GetFileNameWithoutExtension(svgFileName), File.ReadAllText(svgFileName));
+        var autoGenIndexSvgRawDoc = autoIndexer.CreateAutoIndexSvg(pageToReferencesMap);
         var autoGenIndexParsedDoc = ParsedDocument.Create(new SvgDotGraphCaptionParser(), autoGenIndexSvgRawDoc);
 
         var allParsedDocs = parsedDocuments.Concat([autoGenIndexParsedDoc]);
