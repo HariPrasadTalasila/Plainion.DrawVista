@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -50,7 +51,7 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
         {
             var currentPageName = currentPage.Name;
             var otherPageNames = knownPageNames.Except([currentPageName]);
-            var pageReferencesByCurrentPage = otherPageNames.Where(x => GetCaptionNames(currentPage).Contains(x));
+            var pageReferencesByCurrentPage = otherPageNames.Where(x => GetCaptionNames(currentPage).Any(cn => cn.Equals(x, StringComparison.OrdinalIgnoreCase) ));
             
             pageToReferencesMap[currentPageName] = pageReferencesByCurrentPage.ToList();
         }
