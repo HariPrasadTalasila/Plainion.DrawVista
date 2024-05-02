@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 
 namespace Plainion.DrawVista.UseCases;
@@ -26,6 +28,11 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
             .Select(x => ParsedDocument.Create(myParser, x))
             .Concat(existingDocuments);
 
+        Console.WriteLine("!!! Creating dot language file !!!");
+        var pageToReferencesMap = GetPageToReferencesMap(knownPageNames, parsedDocuments);
+        var dotModel = new DotFileWriter(pageToReferencesMap);
+        dotModel.WriteTo(Path.GetTempFileName() + ".dot");
+
         foreach (var doc in parsedDocuments)
         {
             AddLinks(knownPageNames, doc);
@@ -33,6 +40,25 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
             myStore.Save(doc.ToProcessedDocument());
         }
     }
+
+    private IDictionary<string, IList<string>> GetPageToReferencesMap(IReadOnlyCollection<string> knownPageNames, IEnumerable<ParsedDocument> parsedDocuments)
+    {
+        var pageToReferencesMap = new Dictionary<string, IList<string>>();
+
+        IEnumerable<string> GetCaptionNames(ParsedDocument parsedDoc) => parsedDoc.Captions.Select(x => x.DisplayText);
+
+        foreach (var currentPage in parsedDocuments)
+        {
+            var currentPageName = currentPage.Name;
+            var otherPageNames = knownPageNames.Except([currentPageName]);
+            var pageReferencesByCurrentPage = otherPageNames.Where(x => GetCaptionNames(currentPage).Contains(x));
+            
+            pageToReferencesMap[currentPageName] = pageReferencesByCurrentPage.ToList();
+        }
+
+        return pageToReferencesMap;
+    }
+
 
     private record ParsedDocument(string Name, XElement Content, IReadOnlyCollection<Caption> Captions)
     {
@@ -102,5 +128,26 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
         {
             myFormatter.ApplyStyle(link, isExternal: true);
         }
+    }
+}
+
+internal class DotFileWriter(IDictionary<string, IList<string>> NodeLinks)
+{
+    public void WriteTo(string file)
+    {
+        StringBuilder graphContent = new();
+
+        foreach (var links in NodeLinks)
+        {
+            foreach(var refNode in links.Value)
+            {
+                graphContent.AppendLine($"{links.Key} -> {refNode}");
+            }
+        }
+
+        var fileContent = $"digraph {{ { Environment.NewLine } node [shape = box] { Environment.NewLine } {graphContent} }}";
+
+        File.WriteAllText(file, fileContent);
+        Console.WriteLine($"dot file created at location: {file}");
     }
 }
