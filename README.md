@@ -14,6 +14,9 @@ between different components and layers of your designs and architecture.
 ![](</doc/Programming Languages Page.png>)
 ![](</doc/Structured Programming Page.png>)
 
+## Developer Notes
+Go to ![design.md](</doc/design.md>) to see design details
+
 ## Installation
 
 - pre-requisite: install DrawIO (the desktop app)
