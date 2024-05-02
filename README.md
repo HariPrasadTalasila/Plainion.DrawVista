@@ -19,7 +19,9 @@ Go to ![design.md](</doc/design.md>) to see design details
 
 ## Installation
 
-- pre-requisite: install DrawIO (the desktop app)
+- **pre-requisites**:
+  - install DrawIO (the desktop app)
+  - install GraphViz (dot.exe required to convert dot -> svg)
 - clone this repository
 - run 'build\build-release.cmd'
 - copy 'src\Plainion.DrawVista\bin\Release\net8.0\*' to a location of your choice or run the application from this location
