@@ -3,7 +3,7 @@ using Plainion.DrawVista.UseCases;
 
 namespace Plainion.DrawVista.IO;
 
-internal class SvgIndexCreator : ISvgIndexCreator
+public class SvgIndexCreator : ISvgIndexCreator
 {
     public RawDocument CreateAutoIndexSvg(IDictionary<string, IList<string>> pageToReferencesMap)
     {
