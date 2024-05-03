@@ -1,5 +1,3 @@
-using System.Xml.Linq;
-
 namespace Plainion.DrawVista.UseCases;
 
 public record SearchResult(string PageName, IReadOnlyCollection<string> Captions);

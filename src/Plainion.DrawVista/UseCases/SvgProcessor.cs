@@ -1,14 +1,12 @@
-using System.Collections;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Plainion.DrawVista.IO;
 
 namespace Plainion.DrawVista.UseCases;
 
-public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter formatter, ISvgIndexCreator autoIndexer, IDocumentStore store)
+public class SvgProcessor(ISvgCaptionParserFactory parserFactory, ISvgHyperlinkFormatter formatter, ISvgIndexCreator autoIndexer, IDocumentStore store)
 {
-    private readonly ISvgCaptionParser myParser = parser;
+    private readonly ISvgCaptionParserFactory myParserFactory = parserFactory;
     private readonly ISvgHyperlinkFormatter myFormatter = formatter;
     private readonly IDocumentStore myStore = store;
 
@@ -19,7 +17,7 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
     {
         var existingDocuments = myStore.GetPageNames()
             .Where(x => !documents.Any(y => y.Name.Equals(x, StringComparison.OrdinalIgnoreCase)))
-            .Select(x => ParsedDocument.Create(myParser, myStore.GetPage(x)))
+            .Select(x => ParsedDocument.Create(myParserFactory.CreateParser("DrawIO"), myStore.GetPage(x)))
             .ToList();
 
         var knownPageNames = documents.Select(x => x.Name)
@@ -27,12 +25,12 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
             .ToList();
 
         var parsedDocuments = documents
-            .Select(x => ParsedDocument.Create(myParser, x))
+            .Select(x => ParsedDocument.Create(myParserFactory.CreateParser("DrawIO"), x))
             .Concat(existingDocuments);
 
         var pageToReferencesMap = GetPageToReferencesMap(knownPageNames, parsedDocuments);
         var autoGenIndexSvgRawDoc = autoIndexer.CreateAutoIndexSvg(pageToReferencesMap);
-        var autoGenIndexParsedDoc = ParsedDocument.Create(new SvgDotGraphCaptionParser(), autoGenIndexSvgRawDoc);
+        var autoGenIndexParsedDoc = ParsedDocument.Create(myParserFactory.CreateParser("DotGraph"), autoGenIndexSvgRawDoc);
 
         var allParsedDocs = parsedDocuments.Concat([autoGenIndexParsedDoc]);
 
@@ -133,21 +131,4 @@ public class SvgProcessor(ISvgCaptionParser parser, ISvgHyperlinkFormatter forma
             myFormatter.ApplyStyle(link, isExternal: true);
         }
     }
-}
-
-public partial class SvgDotGraphCaptionParser : ISvgCaptionParser
-{
-    public IReadOnlyCollection<Caption> Parse(XElement document) =>
-        document
-            .Descendants()
-            .Where(x => x.EqualsTagName("text"))
-            .Select(x => new Caption(x, GetDisplayText(x.Value)))
-            .ToList();
-
-    private static string GetDisplayText(string value) =>
-        WhitespacePattern().Replace(value, "")
-            .Replace("<br/>", "");
-    
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex WhitespacePattern();
 }

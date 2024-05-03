@@ -34,7 +34,7 @@ if (!Directory.Exists(outputFolder))
 
 builder.Services.AddSingleton<IDocumentStore>(new DocumentStoreCachingDecorator(new DocumentStore(outputFolder)));
 builder.Services.AddSingleton(new DrawingWorkbookFactory(inputFolder));
-builder.Services.AddSingleton<ISvgCaptionParser, SvgDrawIOCaptionParser>();
+builder.Services.AddSingleton<ISvgCaptionParserFactory, SvgCaptionParserFactory>();
 builder.Services.AddSingleton<ISvgHyperlinkFormatter, SvgHyperlinkFormatter>();
 builder.Services.AddSingleton<ISvgIndexCreator, SvgIndexCreator>();
 builder.Services.AddSingleton<SvgProcessor>();
